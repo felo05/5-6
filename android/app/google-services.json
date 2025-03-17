@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "445028058844",
+    "project_id": "khoras-5-6",
+    "storage_bucket": "khoras-5-6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:445028058844:android:1abc5a4e8f9273b7635619",
+        "android_client_info": {
+          "package_name": "com.example.khoras_5_6"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuqkF67R-bDmuepLZHS0BgMj59rxsu-Dk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
