@@ -2,7 +2,6 @@ name: Build iOS Ipa
 
 on:
   workflow_dispatch:
-
 jobs:
   build-ios:
     name: Build iOS Ipa
@@ -14,7 +13,22 @@ jobs:
         with:
           channel: 'stable'
           architecture: x64
+
       - run: flutter pub get
+
+      - name: Ensure Podfile exists
+        run: |
+          if [ ! -f ios/Podfile ]; then
+            echo "Podfile not found. Generating it..."
+            cd ios
+            touch Podfile
+            echo "platform :ios, '13.0'" >> Podfile
+            echo "use_frameworks!" >> Podfile
+            echo "target 'Runner' do" >> Podfile
+            echo "  # Add your pods here" >> Podfile
+            echo "end" >> Podfile
+            cd ..
+          fi
 
       - run: pod repo update
         working-directory: ios
