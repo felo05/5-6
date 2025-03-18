@@ -20,10 +20,13 @@ jobs:
 
       - name: Set up Flutter iOS environment
         run: |
-          flutter doctor -v  # For debugging, shows Flutter setup details
-          flutter precache --ios  # Ensures iOS tools are downloaded
-          flutter clean  # Resets build artifacts
-          flutter pub get  # Re-runs pub get to regenerate iOS-specific files
+          flutter doctor -v  # For debugging
+          flutter precache --ios  # Download iOS tools
+          flutter clean  # Reset build state
+          flutter pub get  # Regenerate dependencies
+          cd ios
+          flutter pods --force  # Explicitly generate podhelper.rb and related files
+          cd ..
 
       - name: Install CocoaPods dependencies
         run: |
