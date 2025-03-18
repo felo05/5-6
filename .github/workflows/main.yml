@@ -2,6 +2,7 @@ name: Build iOS Ipa
 
 on:
   workflow_dispatch:
+
 jobs:
   build-ios:
     name: Build iOS Ipa
@@ -14,38 +15,41 @@ jobs:
           channel: 'stable'
           architecture: x64
 
-      - run: flutter pub get
+      - name: Install Flutter dependencies
+        run: flutter pub get
 
-      - name: Ensure Podfile exists
+      - name: Set up Xcode configuration
         run: |
-          if [ ! -f ios/Podfile ]; then
-            echo "Podfile not found. Generating it..."
-            cd ios
-            touch Podfile
-            echo "platform :ios, '13.0'" >> Podfile
-            echo "use_frameworks!" >> Podfile
-            echo "target 'Runner' do" >> Podfile
-            echo "  # Add your pods here" >> Podfile
-            echo "end" >> Podfile
-            cd ..
-          fi
+          cd ios
+          flutter precache --ios
+          pod deintegrate || true  # Clean up any broken CocoaPods state
+          rm -rf Pods Podfile.lock  # Remove old Podfile artifacts
+          flutter clean
+          flutter pub get
+          cd ..
 
-      - run: pod repo update
-        working-directory: ios
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
 
-      - run: flutter build ios --release --no-codesign
+      - name: Build iOS app
+        run: flutter build ios --release --no-codesign
 
-      - run: mkdir Payload
+      - name: Create Payload directory
+        run: mkdir Payload
         working-directory: build/ios/iphoneos
 
-      - run: mv Runner.app/ Payload
+      - name: Move Runner.app to Payload
+        run: mv Runner.app Payload
         working-directory: build/ios/iphoneos
 
-      - name: Zip output
+      - name: Zip IPA
         run: zip -qq -r -9 FlutterIpaExport.ipa Payload
         working-directory: build/ios/iphoneos
 
-      - name: Upload binaries to release
+      - name: Upload IPA to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
