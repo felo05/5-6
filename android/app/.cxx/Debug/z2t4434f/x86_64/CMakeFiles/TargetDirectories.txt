@@ -1,0 +1,2 @@
+C:/Users/feloa/StudioProjects/khoras_5_6/android/app/.cxx/Debug/z2t4434f/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/feloa/StudioProjects/khoras_5_6/android/app/.cxx/Debug/z2t4434f/x86_64/CMakeFiles/rebuild_cache.dir
