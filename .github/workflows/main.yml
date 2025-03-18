@@ -20,26 +20,17 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
+      - name: Precache iOS artifacts
+        run: flutter precache --ios
+
       - name: Set up Flutter iOS environment
         run: |
           flutter doctor -v  # For debugging
-          flutter precache --ios  # Ensure iOS tools are downloaded
-          flutter clean  # Reset build state
-          flutter pub get  # Regenerate dependencies
-          # Build iOS to generate necessary files (no codesign for now)
-          flutter build ios --release --no-codesign --verbose || true
-          # Check and fix podhelper.rb if missing
-          if [ ! -f "ios/Flutter/podhelper.rb" ]; then
-            echo "podhelper.rb not found, copying from Flutter SDK..."
-            mkdir -p ios/Flutter
-            cp "$FLUTTER_ROOT/bin/cache/artifacts/engine/ios/podhelper.rb" ios/Flutter/
-          fi
-          ls -la ios/Flutter || echo "ios/Flutter directory listing failed"
-          # Clean up CocoaPods
+          flutter clean      # Reset build state
+          flutter pub get    # Regenerate dependencies
           cd ios
-          pod deintegrate || true
-          rm -rf Pods Podfile.lock
-          pod cache clean --all
+          pod deintegrate || true  # Clean up any broken CocoaPods state
+          rm -rf Pods Podfile.lock  # Remove stale files
           cd ..
 
       - name: Install CocoaPods dependencies
@@ -48,7 +39,7 @@ jobs:
           pod install --repo-update
           cd ..
 
-      - name: Build iOS app (final build)
+      - name: Build iOS app
         run: flutter build ios --release --no-codesign
 
       - name: Create Payload directory
