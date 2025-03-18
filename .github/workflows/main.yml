@@ -25,8 +25,10 @@ jobs:
           flutter clean  # Reset build state
           flutter pub get  # Regenerate dependencies
           cd ios
-          flutter pods --force  # Explicitly generate podhelper.rb and related files
+          pod deintegrate || true  # Clean up any broken CocoaPods state
+          rm -rf Pods Podfile.lock  # Remove stale files
           cd ..
+          flutter build ios --release --no-codesign --verbose  # Generate ephemeral files (e.g., podhelper.rb)
 
       - name: Install CocoaPods dependencies
         run: |
@@ -34,7 +36,7 @@ jobs:
           pod install --repo-update
           cd ..
 
-      - name: Build iOS app
+      - name: Build iOS app (final build)
         run: flutter build ios --release --no-codesign
 
       - name: Create Payload directory
