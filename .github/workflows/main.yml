@@ -21,16 +21,21 @@ jobs:
       - name: Set up Flutter iOS environment
         run: |
           flutter doctor -v  # For debugging
-          flutter precache --ios  # Download iOS tools
+          flutter precache --ios  # Ensure iOS tools are downloaded
           flutter clean  # Reset build state
           flutter pub get  # Regenerate dependencies
-          # Ensure Flutter directory is initialized
-          mkdir -p Flutter/ephemeral/.ios/Flutter
-          # Run a minimal iOS build to generate ephemeral files
+          # Explicitly generate Flutter ephemeral files
           flutter build ios --release --no-codesign --verbose || true
           # Debug: Check if podhelper.rb exists
           echo "Checking for podhelper.rb:"
           ls -la Flutter/ephemeral/.ios/Flutter || echo "Directory not found"
+          # If still missing, copy from Flutter SDK as a fallback
+          if [ ! -f Flutter/ephemeral/.ios/Flutter/podhelper.rb ]; then
+            echo "podhelper.rb not found, copying from Flutter SDK..."
+            mkdir -p Flutter/ephemeral/.ios/Flutter
+            cp $FLUTTER_ROOT/bin/cache/artifacts/engine/ios/podhelper.rb Flutter/ephemeral/.ios/Flutter/
+          fi
+          ls -la Flutter/ephemeral/.ios/Flutter  # Confirm it’s there now
           cd ios
           pod deintegrate || true  # Clean up any broken CocoaPods state
           rm -rf Pods Podfile.lock  # Remove stale files
