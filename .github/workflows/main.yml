@@ -7,51 +7,72 @@ jobs:
   build-ios:
     name: Build iOS IPA
     runs-on: macos-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Cache Flutter dependencies to avoid re-downloading each time
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ios/Flutter/Generated.xcconfig
+          key: ${{ runner.os }}-flutter-${{ hashFiles('pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      # Cache CocoaPods dependencies to speed up builds
+      - name: Cache CocoaPods
+        uses: actions/cache@v3
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      # Set up Flutter environment
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
 
+      # Install Flutter dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
+      # Precache iOS artifacts to avoid downloading them during build
       - name: Precache iOS artifacts
         run: flutter precache --ios
 
-      - name: Set up Flutter iOS environment
-        run: |
-          flutter doctor -v  # For debugging
-          flutter clean      # Reset build state
-          flutter pub get    # Regenerate dependencies
-          cd ios
-          pod deintegrate || true  # Clean up any broken CocoaPods state
-          rm -rf Pods Podfile.lock  # Remove stale files
-          cd ..
-
+      # Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
         run: |
           cd ios
           pod install --repo-update
           cd ..
 
+      # Build iOS app
       - name: Build iOS app
-        run: flutter build ios --release --no-codesign
+        run: |
+          set -o pipefail
+          flutter build ios --release --no-codesign | xcpretty
 
+      # Create Payload directory for IPA packaging
       - name: Create Payload directory
         run: |
           mkdir -p Payload
           mv Runner.app Payload/
         working-directory: build/ios/iphoneos
 
+      # Zip the IPA file
       - name: Zip IPA
         run: zip -qq -r -9 FlutterIpaExport.ipa Payload
         working-directory: build/ios/iphoneos
 
+      # Upload IPA to GitHub release
       - name: Upload IPA to release
         uses: svenstaro/upload-release-action@v2
         with:
