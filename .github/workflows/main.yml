@@ -1,16 +1,18 @@
-name: Build iOS Ipa
+name: Build iOS IPA
 
 on:
   workflow_dispatch:
 
 jobs:
   build-ios:
-    name: Build iOS Ipa
+    name: Build iOS IPA
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
@@ -24,21 +26,20 @@ jobs:
           flutter precache --ios  # Ensure iOS tools are downloaded
           flutter clean  # Reset build state
           flutter pub get  # Regenerate dependencies
-          # Explicitly generate Flutter ephemeral files
+          # Build iOS to generate necessary files (no codesign for now)
           flutter build ios --release --no-codesign --verbose || true
-          # Debug: Check if podhelper.rb exists
-          echo "Checking for podhelper.rb:"
-          ls -la Flutter/ephemeral/.ios/Flutter || echo "Directory not found"
-          # If still missing, copy from Flutter SDK as a fallback
-          if [ ! -f Flutter/ephemeral/.ios/Flutter/podhelper.rb ]; then
+          # Check and fix podhelper.rb if missing
+          if [ ! -f "ios/Flutter/podhelper.rb" ]; then
             echo "podhelper.rb not found, copying from Flutter SDK..."
-            mkdir -p Flutter/ephemeral/.ios/Flutter
-            cp $FLUTTER_ROOT/bin/cache/artifacts/engine/ios/podhelper.rb Flutter/ephemeral/.ios/Flutter/
+            mkdir -p ios/Flutter
+            cp "$FLUTTER_ROOT/bin/cache/artifacts/engine/ios/podhelper.rb" ios/Flutter/
           fi
-          ls -la Flutter/ephemeral/.ios/Flutter  # Confirm it’s there now
+          ls -la ios/Flutter || echo "ios/Flutter directory listing failed"
+          # Clean up CocoaPods
           cd ios
-          pod deintegrate || true  # Clean up any broken CocoaPods state
-          rm -rf Pods Podfile.lock  # Remove stale files
+          pod deintegrate || true
+          rm -rf Pods Podfile.lock
+          pod cache clean --all
           cd ..
 
       - name: Install CocoaPods dependencies
@@ -51,11 +52,9 @@ jobs:
         run: flutter build ios --release --no-codesign
 
       - name: Create Payload directory
-        run: mkdir Payload
-        working-directory: build/ios/iphoneos
-
-      - name: Move Runner.app to Payload
-        run: mv Runner.app Payload
+        run: |
+          mkdir -p Payload
+          mv Runner.app Payload/
         working-directory: build/ios/iphoneos
 
       - name: Zip IPA
