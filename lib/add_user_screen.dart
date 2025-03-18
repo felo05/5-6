@@ -268,6 +268,7 @@ class AddUserScreenState extends State<AddUserScreen> {
                                         notes: noteController.text,
                                         isShamas: isShamas,
                                         dateBirth: dateTime,
+                                        id: User.maxId + 1,
                                         level: selectedClass == ''
                                             ? null
                                             : int.parse(selectedClass),
@@ -281,6 +282,7 @@ class AddUserScreenState extends State<AddUserScreen> {
                                         ? null
                                         : File(image!.path),
                                     context: context);
+                                User.maxId = User.maxId + 1;
                               }
                             : null,
                         child: const Text('Add User'),

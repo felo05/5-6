@@ -15,7 +15,7 @@ class AddScoreCubit extends Cubit<AddScoreState> {
     emit(AddScoreLoadingState());
 
     try {
-      String entry = "$date ${reason=="tsme3"?l7n:reason}";
+      final String entry =reason=="tsme3"?l7n!:"$date $reason";
       for (var user in selectedList) {
         user.score = (user.score ?? 0) + score;
         user.attended.add(entry);
