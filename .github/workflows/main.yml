@@ -18,15 +18,12 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Set up Xcode configuration
+      - name: Set up Flutter iOS environment
         run: |
-          cd ios
-          flutter precache --ios
-          pod deintegrate || true  # Clean up any broken CocoaPods state
-          rm -rf Pods Podfile.lock  # Remove old Podfile artifacts
-          flutter clean
-          flutter pub get
-          cd ..
+          flutter doctor -v  # For debugging, shows Flutter setup details
+          flutter precache --ios  # Ensures iOS tools are downloaded
+          flutter clean  # Resets build artifacts
+          flutter pub get  # Re-runs pub get to regenerate iOS-specific files
 
       - name: Install CocoaPods dependencies
         run: |
