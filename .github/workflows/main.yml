@@ -24,11 +24,17 @@ jobs:
           flutter precache --ios  # Download iOS tools
           flutter clean  # Reset build state
           flutter pub get  # Regenerate dependencies
+          # Ensure Flutter directory is initialized
+          mkdir -p Flutter/ephemeral/.ios/Flutter
+          # Run a minimal iOS build to generate ephemeral files
+          flutter build ios --release --no-codesign --verbose || true
+          # Debug: Check if podhelper.rb exists
+          echo "Checking for podhelper.rb:"
+          ls -la Flutter/ephemeral/.ios/Flutter || echo "Directory not found"
           cd ios
           pod deintegrate || true  # Clean up any broken CocoaPods state
           rm -rf Pods Podfile.lock  # Remove stale files
           cd ..
-          flutter build ios --release --no-codesign --verbose  # Generate ephemeral files (e.g., podhelper.rb)
 
       - name: Install CocoaPods dependencies
         run: |
