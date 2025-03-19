@@ -50,8 +50,8 @@ jobs:
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          gem install cocoapods -v 1.16.1  # Use the latest version available
-          pod install --repo-update --verbose  # Verbose output for debugging
+          gem install cocoapods -v 1.16.1
+          pod install --repo-update --verbose
           cd ..
 
       # Build iOS app
