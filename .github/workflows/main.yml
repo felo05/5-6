@@ -12,26 +12,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Cache Flutter dependencies to avoid re-downloading each time
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.pub-cache
-            ios/Flutter/Generated.xcconfig
-          key: ${{ runner.os }}-flutter-${{ hashFiles('pubspec.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-
-
-      # Cache CocoaPods dependencies to speed up builds
-      - name: Cache CocoaPods
-        uses: actions/cache@v3
-        with:
-          path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       # Set up Flutter environment
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -43,9 +23,20 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # Precache iOS artifacts to avoid downloading them during build
+      # Precache iOS artifacts to ensure all Flutter tools are available
       - name: Precache iOS artifacts
         run: flutter precache --ios
+
+      # Clean and set up the iOS environment
+      - name: Set up Flutter iOS environment
+        run: |
+          flutter doctor -v  # For debugging
+          flutter clean      # Reset build state
+          flutter pub get    # Regenerate dependencies
+          cd ios
+          pod deintegrate || true  # Clean up any broken CocoaPods state
+          rm -rf Pods Podfile.lock  # Force a fresh Pods install
+          cd ..
 
       # Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
