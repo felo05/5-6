@@ -16,7 +16,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'  # Use a stable Ruby version compatible with CocoaPods
+          ruby-version: '3.1'
           bundler-cache: true
 
       # Set up Flutter environment
@@ -43,13 +43,14 @@ jobs:
           cd ios
           pod deintegrate || true
           rm -rf Pods Podfile.lock
+          pod cache clean --all
           cd ..
 
       # Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          gem install cocoapods # Ensure latest CocoaPods version
+          gem install cocoapods -v 1.15.2  # Use a slightly older, stable version known to work with Flutter
           pod install --repo-update
           cd ..
 

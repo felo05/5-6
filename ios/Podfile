@@ -29,14 +29,15 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
 target 'Runner' do
-  use_frameworks!  # Required for Firebase and other frameworks
-  use_modular_headers!  # Enable modular headers globally
+  use_frameworks!
+  use_modular_headers!  # Enable modular headers globally for all pods
 
-  # Explicitly list key dependencies with modular headers
+  # Explicitly ensure key dependencies and their transitive dependencies have module maps
   pod 'SDWebImage', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
   pod 'leveldb-library', :modular_headers => true
   pod 'nanopb', :modular_headers => true
+  pod 'Firebase', :modular_headers => true
   pod 'FirebaseCore', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
   pod 'FirebaseFirestore', :modular_headers => true
