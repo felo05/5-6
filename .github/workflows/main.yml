@@ -9,27 +9,33 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # ✅ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # ✅ Set up Flutter environment
+      # Set up Ruby for CocoaPods
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'  # Use a stable Ruby version compatible with CocoaPods
+          bundler-cache: true
+
+      # Set up Flutter environment
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
 
-      # ✅ Install Flutter dependencies
+      # Install Flutter dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # ✅ Precache iOS artifacts
+      # Precache iOS artifacts
       - name: Precache iOS artifacts
         run: flutter precache --ios
 
-      # ✅ Clean and set up iOS environment
-      - name: Clean and set up iOS environment
+      # Clean and set up the iOS environment
+      - name: Set up Flutter iOS environment
         run: |
           flutter doctor -v
           flutter clean
@@ -37,28 +43,32 @@ jobs:
           cd ios
           pod deintegrate || true
           rm -rf Pods Podfile.lock
+          cd ..
+
+      # Install CocoaPods dependencies
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          gem install cocoapods # Ensure latest CocoaPods version
           pod install --repo-update
           cd ..
 
-      # ✅ Build iOS app (No codesign)
+      # Build iOS app
       - name: Build iOS app
         run: |
           set -o pipefail
-          flutter build ios --release --no-codesign | xcpretty
+          flutter build ios --release --no-codesign
 
-      # ✅ Create Payload directory for IPA packaging
-      - name: Create Payload directory
+      # Archive and export IPA
+      - name: Archive and export IPA
         run: |
+          cd build/ios/iphoneos
           mkdir -p Payload
-          mv Runner.app Payload/
-        working-directory: build/ios/iphoneos
+          cp -R Runner.app Payload/
+          zip -qq -r -9 FlutterIpaExport.ipa Payload
+          cd ../../..
 
-      # ✅ Zip the IPA file
-      - name: Create IPA
-        run: zip -qq -r -9 FlutterIpaExport.ipa Payload
-        working-directory: build/ios/iphoneos
-
-      # ✅ Upload IPA to GitHub release
+      # Upload IPA to GitHub release
       - name: Upload IPA to release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -66,4 +76,4 @@ jobs:
           file: build/ios/iphoneos/FlutterIpaExport.ipa
           tag: v1.0
           overwrite: true
-          body: "Generated iOS IPA build"
+          body: "Congrats"
