@@ -454,7 +454,7 @@ class StaffScreenState extends State<StaffScreen> {
                 CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.grey[300],
-                  child: staff.image == null
+                  child: (staff.image == null||staff.image!.isEmpty)
                       ? const Icon(Icons.person, size: 45)
                       : ClipOval(
                           child: CustomNetworkImage(
@@ -561,7 +561,7 @@ class StaffScreenState extends State<StaffScreen> {
             CircleAvatar(
               radius: 80,
               backgroundColor: Colors.grey[300],
-              child: staff.image == null
+              child: (staff.image == null||staff.image!.isEmpty)
                   ? const Icon(Icons.person, size: 55)
                   : ClipOval(
                       child: CustomNetworkImage(

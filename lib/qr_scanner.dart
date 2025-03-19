@@ -23,7 +23,7 @@ class QRScanner extends StatefulWidget {
 class QRScannerState extends State<QRScanner> {
   MobileScannerController cameraController = MobileScannerController();
   Timer? _scanTimer;
-  bool _isScanning = true;
+  bool _isScanning = false;
   int score = 0;
   DateTime dateTime = DateTime.now();
   final List<String> reasons = [
@@ -36,6 +36,7 @@ class QRScannerState extends State<QRScanner> {
   ];
   String? selectedReason = "Bonus";
   String? selectedL7n;
+
   @override
   void dispose() {
     _scanTimer?.cancel();
@@ -52,23 +53,29 @@ class QRScannerState extends State<QRScanner> {
     for (User user in StaffScreenState.tempList) {
       if (user.id.toString() == barcode.rawValue.toString()) {
         AddScoreCubit().addScore({user}, StaffScreenState.tempList, score,
-            selectedReason!,selectedL7n, DateFormat('yyyy-MM-dd').format(dateTime));
-        resultName =
-            user.name ?? "User"; // Assuming User model has a name field
+            selectedReason!, selectedL7n, DateFormat('yyyy-MM-dd').format(dateTime));
+        resultName = user.name ?? "User";
         break;
       }
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
         content: Text('Scanned: $resultName'),
-        duration: const Duration(seconds: 5),
+        actions: const [SizedBox.shrink()],
       ),
     );
-    context.read<GetStaffCubit>();
-    _scanTimer = Timer(const Duration(seconds: 3), () {
-      setState(() => _isScanning = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
     });
+    context.read<GetStaffCubit>().emitSuccess();
+    _scanTimer = Timer(const Duration(seconds: 3), () {
+      setState(() => _isScanning = false);
+    });
+  }
+
+  void _triggerScan() {
+    setState(() => _isScanning = true);
   }
 
   Widget _scoreWidget(StateSetter stateSetter, {required int value}) {
@@ -102,14 +109,17 @@ class QRScannerState extends State<QRScanner> {
       ),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: cameraController,
-            onDetect: (capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                _handleScan(barcode);
-              }
-            },
+          GestureDetector(
+            onTap: _triggerScan,
+            child: MobileScanner(
+              controller: cameraController,
+              onDetect: (capture) {
+                final List<Barcode> barcodes = capture.barcodes;
+                for (final barcode in barcodes) {
+                  _handleScan(barcode);
+                }
+              },
+            ),
           ),
           Positioned(
             left: 0,
@@ -120,7 +130,7 @@ class QRScannerState extends State<QRScanner> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
+                const BorderRadius.vertical(top: Radius.circular(20)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -158,9 +168,9 @@ class QRScannerState extends State<QRScanner> {
                       ),
                       items: StaffScreenState.al7an
                           .map((type) => DropdownMenuItem(
-                                value: type.toString(),
-                                child: Text(type.toString()),
-                              ))
+                        value: type.toString(),
+                        child: Text(type.toString()),
+                      ))
                           .toList(),
                       onChanged: (value) =>
                           setState(() => selectedL7n = value),
@@ -178,9 +188,9 @@ class QRScannerState extends State<QRScanner> {
                       ),
                       items: reasons
                           .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
+                        value: type,
+                        child: Text(type),
+                      ))
                           .toList(),
                       onChanged: (value) =>
                           setState(() => selectedReason = value),
@@ -209,13 +219,14 @@ class QRScannerState extends State<QRScanner> {
                       Expanded(child: _scoreWidget(setState, value: 10)),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
           ),
         ],
       ),
+      // Removed floatingActionButton and floatingActionButtonLocation
     );
   }
 }
