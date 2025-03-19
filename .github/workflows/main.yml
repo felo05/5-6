@@ -50,8 +50,8 @@ jobs:
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          gem install cocoapods -v 1.15.2  # Use a slightly older, stable version known to work with Flutter
-          pod install --repo-update
+          gem install cocoapods -v 1.16.1  # Use the latest version available
+          pod install --repo-update --verbose  # Verbose output for debugging
           cd ..
 
       # Build iOS app
