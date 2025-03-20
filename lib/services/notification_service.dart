@@ -10,11 +10,24 @@ class NotificationService {
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
     AndroidInitializationSettings('@mipmap/launcher_icon');
+    const DarwinInitializationSettings initializationSettingsIOS =
+    DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
-    const InitializationSettings initializationSettings =
-    InitializationSettings(android: initializationSettingsAndroid);
-
-    await _localNotificationsPlugin.initialize(initializationSettings);
+    try {
+      await _localNotificationsPlugin.initialize(initializationSettings);
+      print('Local notifications initialized successfully');
+    } catch (e) {
+      print('Error initializing local notifications: $e');
+      rethrow; // Optionally rethrow if critical
+    }
   }
 
   Future<void> showNotification({
@@ -24,16 +37,20 @@ class NotificationService {
   }) async {
     BigPictureStyleInformation? bigPictureStyleInformation;
 
-    if (imageUrl != null) {
-      final ByteArrayAndroidBitmap largeIcon = await _downloadAndSaveImage(imageUrl, 'largeIcon');
-      final ByteArrayAndroidBitmap bigPicture = await _downloadAndSaveImage(imageUrl, 'bigPicture');
-
-      bigPictureStyleInformation = BigPictureStyleInformation(
-        bigPicture,
-        largeIcon: largeIcon,
-        contentTitle: title,
-        summaryText: body,
-      );
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      try {
+        final ByteArrayAndroidBitmap largeIcon = await _downloadAndSaveImage(imageUrl, 'largeIcon');
+        final ByteArrayAndroidBitmap bigPicture = await _downloadAndSaveImage(imageUrl, 'bigPicture');
+        bigPictureStyleInformation = BigPictureStyleInformation(
+          bigPicture,
+          largeIcon: largeIcon,
+          contentTitle: title,
+          summaryText: body,
+        );
+      } catch (e) {
+        print('Error downloading notification image: $e');
+        // Proceed without image if download fails
+      }
     }
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
@@ -44,22 +61,29 @@ class NotificationService {
       styleInformation: bigPictureStyleInformation,
     );
 
+    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails();
+
     final NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
+      iOS: iosPlatformChannelSpecifics,
     );
 
-    await _localNotificationsPlugin.show(
-      0, 
-      title,
-      body,
-      platformChannelSpecifics,
-    );
+    try {
+      await _localNotificationsPlugin.show(
+        0,
+        title ?? 'Notification',
+        body ?? 'No content',
+        platformChannelSpecifics,
+      );
+      print('Notification shown successfully');
+    } catch (e) {
+      print('Error showing notification: $e');
+    }
   }
 
   Future<ByteArrayAndroidBitmap> _downloadAndSaveImage(String url, String fileName) async {
     final Directory directory = await getApplicationDocumentsDirectory();
     final String filePath = '${directory.path}/$fileName';
-
     final http.Response response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -70,5 +94,4 @@ class NotificationService {
       throw Exception('Error downloading image: ${response.statusCode}');
     }
   }
-
 }

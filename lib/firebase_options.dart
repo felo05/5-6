@@ -68,22 +68,22 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA-HPHXlW-ZS3z0TK9b5LIhIUVbbWclypM',
-    appId: '1:282688463082:ios:c2aa3f1e473471c6edf793',
-    messagingSenderId: '282688463082',
-    projectId: 'argenworld-44f6d',
-    storageBucket: 'argenworld-44f6d.appspot.com',
-    iosBundleId: 'com.example.thanawy',
+    apiKey: 'AIzaSyDRnN-zM2wZ6_ODM5DadF9iBcixmH-UkbU',
+    appId: '1:445028058844:ios:deb7d5e17a4864f3635619',
+    messagingSenderId: '445028058844',
+    projectId: 'khoras-5-6',
+    storageBucket: 'khoras-5-6.firebasestorage.app',
+    iosBundleId: 'com.example.khoras56',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAU2Kypx3TLtspMk3WTpAUucEMcEi_Src0',
-    appId: '1:282688463082:web:01900a4d2170c65fedf793',
-    messagingSenderId: '282688463082',
-    projectId: 'argenworld-44f6d',
-    authDomain: 'argenworld-44f6d.firebaseapp.com',
-    storageBucket: 'argenworld-44f6d.appspot.com',
-    measurementId: 'G-V9RH1TZW4G',
+    apiKey: 'AIzaSyD3_aauHhmg1F0_rf7eHUVUK2svgrcqZpk',
+    appId: '1:445028058844:web:0f3251955c676de6635619',
+    messagingSenderId: '445028058844',
+    projectId: 'khoras-5-6',
+    authDomain: 'khoras-5-6.firebaseapp.com',
+    storageBucket: 'khoras-5-6.firebasestorage.app',
+    measurementId: 'G-M5V2YQHFWK',
   );
 
 }
