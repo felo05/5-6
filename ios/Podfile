@@ -4,9 +4,9 @@ platform :ios, '16.0'  # Increased from 13.0 to meet mobile_scanner requirements
 # CocoaPods installation settings
 install! 'cocoapods', :deterministic_uuids => false
 
-# Specify the Flutter SDK path
-flutter_root = File.expand_path('/Volumes/My Shared Files/flutter')
-require File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
+# Include the Flutter pod helper dynamically
+# Remove hardcoded path and use relative path to Flutter's podhelper
+require_relative '../.symlinks/flutter/ios/podhelper'
 
 target 'Runner' do
   use_frameworks!
