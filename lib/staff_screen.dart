@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart' hide Border;
 import 'package:flutter/cupertino.dart';
@@ -14,6 +15,7 @@ import 'package:khoras_5_6/widgets/p_text.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+
 import 'Cubits/add_score_cubit.dart';
 import 'Cubits/get_staff_cubit.dart';
 import 'add_screen.dart';
@@ -47,7 +49,6 @@ class StaffScreenState extends State<StaffScreen> {
   List<dynamic> headers = [];
   bool sortByScore = true, isAttendance = false;
   static List<dynamic> al7an = [];
-  bool _isDataLoaded = false;
 
   @override
   void initState() {
@@ -56,26 +57,19 @@ class StaffScreenState extends State<StaffScreen> {
   }
 
   Future<void> _initializeData() async {
-    try {
-      context.read<GetStaffCubit>().getRoomData();
-      final dates = await FirebaseFirestore.instance
-          .collection("attendance")
-          .doc("reason")
-          .get();
-      headers = (dates.data() as Map<String, dynamic>?)?["arr"] ?? [];
-      tempHeaders = headers;
-      al7an = (await FirebaseFirestore.instance
-          .collection("al7an")
-          .doc("al7an")
-          .get())
-          .data()?["al7an"] ??
-          [];
-      print('Al7an loaded: $al7an');
-      setState(() => _isDataLoaded = true);
-    } catch (e) {
-      print('Error initializing data: $e');
-      _showAlertDialog('Failed to load initial data: $e');
-    }
+    context.read<GetStaffCubit>().getRoomData();
+    final dates = await FirebaseFirestore.instance
+        .collection("attendance")
+        .doc("reason")
+        .get();
+    headers = (dates.data() as Map<String, dynamic>)["arr"];
+    tempHeaders = headers;
+    al7an = (await FirebaseFirestore.instance
+            .collection("al7an")
+            .doc("al7an")
+            .get())
+        .data()?["al7an"];
+    print(al7an);
   }
 
   void _updateSearch(String value) {
@@ -89,12 +83,6 @@ class StaffScreenState extends State<StaffScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isDataLoaded) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       floatingActionButton: _buildFab(context),
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -110,40 +98,40 @@ class StaffScreenState extends State<StaffScreen> {
   }
 
   Widget _buildFab(BuildContext context) => FloatingActionButton(
-    heroTag: selectedList.isEmpty ? 'scan' : 'add',
-    onPressed: () => selectedList.isEmpty
-        ? Navigator.push(
-        context, MaterialPageRoute(builder: (_) => const QRScanner()))
-        : _showScoreSheet(context),
-    backgroundColor: Theme.of(context).colorScheme.primary,
-    child: Icon(selectedList.isEmpty ? Icons.qr_code_scanner : Icons.add,
-        color: Colors.white, size: 30),
-  );
+        heroTag: selectedList.isEmpty ? 'scan' : 'add',
+        onPressed: () => selectedList.isEmpty
+            ? Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const QRScanner()))
+            : _showScoreSheet(context),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(selectedList.isEmpty ? Icons.qr_code_scanner : Icons.add,
+            color: Colors.white, size: 30),
+      );
 
   AppBar _buildAppBar(BuildContext context) => AppBar(
-    title: const PText(title: "Khoras 5&6", size: PSize.veryLarge),
-    backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-    actions: [
-      PopupMenuButton<int>(
-        onSelected: (value) => setState(() {
-          if (value == 0) isAttendance = !isAttendance;
-          if (value == 1) _sortStaff();
-          if (value == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AddScreen()));
-          }
-          if (value == 4) _exportToExcel();
-        }),
-        itemBuilder: (_) => [
-          _menuItem(0, 'Toggle ${isAttendance ? 'Score' : 'Attendance'}',
-              Icons.insert_chart_outlined),
-          _menuItem(4, 'Export', Icons.save_alt),
-          _menuItem(1, 'Sort', Icons.sort),
-          _menuItem(2, 'Add User', Icons.add),
+        title: const PText(title: "Khoras 5&6", size: PSize.veryLarge),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          PopupMenuButton<int>(
+            onSelected: (value) => setState(() {
+              if (value == 0) isAttendance = !isAttendance;
+              if (value == 1) _sortStaff();
+              if (value == 2) {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const AddScreen()));
+              }
+              if (value == 4) _exportToExcel();
+            }),
+            itemBuilder: (_) => [
+              _menuItem(0, 'Toggle ${isAttendance ? 'Score' : 'Attendance'}',
+                  Icons.insert_chart_outlined),
+              _menuItem(4, 'Export', Icons.save_alt),
+              _menuItem(1, 'Sort', Icons.sort),
+              _menuItem(2, 'Add User', Icons.add),
+            ],
+          ),
         ],
-      ),
-    ],
-  );
+      );
 
   PopupMenuItem<int> _menuItem(int value, String text, IconData icon) =>
       PopupMenuItem(
@@ -156,74 +144,75 @@ class StaffScreenState extends State<StaffScreen> {
       );
 
   Widget _buildSearchBar() => Padding(
-    padding: const EdgeInsets.all(12),
-    child: Row(
-      children: [
-        Expanded(
-            flex: 10,
-            child: CupertinoSearchTextField(
-                padding: const EdgeInsets.all(16),
-                onChanged: _updateSearch)),
-        const SizedBox(width: 5),
-        Expanded(child: _buildFilterMenu()),
-      ],
-    ),
-  );
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+                flex: 10,
+                child: CupertinoSearchTextField(
+                    padding: const EdgeInsets.all(16),
+                    onChanged: _updateSearch)),
+            const SizedBox(width: 5),
+            Expanded(child: _buildFilterMenu()),
+          ],
+        ),
+      );
 
   Widget _buildFilterMenu() => PopupMenuButton<int>(
-    onSelected: (value) => setState(() => staffList = _filterStaff(value)),
-    itemBuilder: (_) => [
-      const PopupMenuItem(value: 0, child: Text("all")),
-      ...[
-        "جورج مينا",
-        "بولا برت",
-        "يوسف جرجس",
-        "بيشوي جوزيف",
-        "بيتر القمص بيمن",
-        "يوسف عصام",
-        "ماريا الفونس",
-        "فيلوباتير إيهاب",
-        "كارين ماجد",
-        "ديانا ماجد",
-        "مريم فوزي",
-        "اباكير سامي"
-      ].asMap().entries.map(
+        onSelected: (value) => setState(() => staffList = _filterStaff(value)),
+        itemBuilder: (_) => [
+          const PopupMenuItem(value: 0, child: Text("all")),
+          ...[
+            "جورج مينا",
+            "بولا برت",
+            "يوسف جرجس",
+            "بيشوي جوزيف",
+            "بيتر القمص بيمن",
+            "يوسف عصام",
+            "ماريا الفونس",
+            "فيلوباتير إيهاب",
+            "كارين ماجد",
+            "ديانا ماجد",
+            "مريم فوزي",
+            "اباكير سامي"
+          ].asMap().entries.map(
               (e) => PopupMenuItem(value: e.key + 1, child: Text(e.value))),
-    ],
-  );
+        ],
+      );
 
   List<User> _filterStaff(int value) => value == 0
       ? tempList
       : tempList
-      .where((e) =>
-  e.khadem ==
-      [
-        "جورج مينا",
-        "بولا برت",
-        "يوسف جرجس",
-        "بيشوي جوزيف",
-        "بيتر القمص بيمن",
-        "يوسف عصام",
-        "ماريا الفونس",
-        "فيلوباتير إيهاب",
-        "كارين ماجد",
-        "ديانا ماجد",
-        "مريم فوزي",
-        "اباكير سامي"
-      ][value - 1])
-      .toList();
+          .where((e) =>
+              e.khadem ==
+              [
+                "جورج مينا",
+                "بولا برت",
+                "يوسف جرجس",
+                "بيشوي جوزيف",
+                "بيتر القمص بيمن",
+                "يوسف عصام",
+                "ماريا الفونس",
+                "فيلوباتير إيهاب",
+                "كارين ماجد",
+                "ديانا ماجد",
+                "مريم فوزي",
+                "اباكير سامي"
+              ][value - 1])
+          .toList();
 
   Widget _buildAttendanceView() {
+    // Determine the number of fixed columns based on selectedValue
     int fixedColumns;
     switch (selectedValue) {
       case "all":
-        fixedColumns = 6;
+        fixedColumns = 6; // Name, Score, 2das, Khoras, Tsb7a, 3shea
         break;
       case "tsme3":
-        fixedColumns = 2;
+        fixedColumns = 2; // Name, Score
         break;
       default:
-        fixedColumns = 3;
+        fixedColumns = 3; // Name, Score, one specific count
         break;
     }
 
@@ -231,6 +220,7 @@ class StaffScreenState extends State<StaffScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Radio buttons in a horizontal scrollable row
           Container(
             height: 60,
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -253,54 +243,64 @@ class StaffScreenState extends State<StaffScreen> {
                         if (selected) {
                           setState(() {
                             selectedValue = button["value"]!;
+                            print("Selected: $selectedValue"); // Debug
                             switch (selectedValue) {
                               case "all":
-                                headers = List.from(tempHeaders);
+                                headers = List.from(tempHeaders); // Deep copy
                                 break;
                               case "khoras":
-                                headers = tempHeaders
-                                    .where((e) => e.toString().split(' ')[1] == "khoras")
-                                    .toList();
+                                headers = tempHeaders.where((e) {
+                                  final parts = e.toString().split(' ');
+                                  return parts.length > 1 && parts[1] == "khoras";
+                                }).toList();
                                 break;
                               case "tsb7a":
-                                headers = tempHeaders
-                                    .where((e) => e.toString().split(' ')[1] == "tsb7a")
-                                    .toList();
+                                headers = tempHeaders.where((e) {
+                                  final parts = e.toString().split(' ');
+                                  return parts.length > 1 && parts[1] == "tsb7a";
+                                }).toList();
                                 break;
                               case "3shea":
-                                headers = tempHeaders
-                                    .where((e) => e.toString().split(' ')[1] == "3shea")
-                                    .toList();
+                                headers = tempHeaders.where((e) {
+                                  final parts = e.toString().split(' ');
+                                  return parts.length > 1 && parts[1] == "3shea";
+                                }).toList();
                                 break;
                               case "2das":
-                                headers = tempHeaders
-                                    .where((e) => e.toString().split(' ')[1] == "2das")
-                                    .toList();
+                                headers = tempHeaders.where((e) {
+                                  final parts = e.toString().split(' ');
+                                  return parts.length > 1 && parts[1] == "2das";
+                                }).toList();
                                 break;
                               case "tsme3":
-                                headers = tempHeaders
-                                    .where((e) {
+                                headers = tempHeaders.where((e) {
                                   final parts = e.toString().split(' ');
                                   return parts.length == 1 ||
                                       (parts.length > 1 &&
-                                          !["2das", "khoras", "tsb7a", "3shea"]
-                                              .contains(parts[1]));
-                                })
-                                    .toList();
+                                          parts[1] != "2das" &&
+                                          parts[1] != "khoras" &&
+                                          parts[1] != "tsb7a" &&
+                                          parts[1] != "3shea");
+                                }).toList();
                                 break;
                             }
+                            print("Headers updated to: $headers"); // Debug
                           });
                         }
                       },
                       selectedColor: Theme.of(context).colorScheme.primary,
                       backgroundColor: Colors.grey[200],
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   );
                 }).toList(),
               ),
             ),
           ),
+          // Attendance grid
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
@@ -327,32 +327,57 @@ class StaffScreenState extends State<StaffScreen> {
     final row = index ~/ totalColumns;
     final col = index % totalColumns;
 
+    // Determine fixed column labels and values
     String label = '';
     String value = '';
 
     if (row == 0) {
-      if (col == 0) label = "Name";
-      else if (col == 1) label = "Score";
-      else if (selectedValue == "all") {
-        if (col == 2) label = "2das";
-        else if (col == 3) label = "Khoras";
-        else if (col == 4) label = "Tsb7a";
-        else if (col == 5) label = "3shea";
-        else label = headers[col - 6].toString();
+      // Header row
+      if (col == 0) {
+        label = "Name";
+      } else if (col == 1) {
+        label = "Score";
+      } else if (selectedValue == "all") {
+        if (col == 2) {
+          label = "2das";
+        } else if (col == 3) {
+          label = "Khoras";
+        } else if (col == 4) {
+          label = "Tsb7a";
+        } else if (col == 5) {
+          label = "3shea";
+        } else {
+          label = headers[col - 6];
+        }
       } else if (selectedValue != "tsme3") {
         if (col == 2) {
           switch (selectedValue) {
-            case "2das": label = "2das"; break;
-            case "khoras": label = "Khoras"; break;
-            case "tsb7a": label = "Tsb7a"; break;
-            case "3shea": label = "3shea"; break;
+            case "2das":
+              label = "2das";
+              break;
+            case "khoras":
+              label = "Khoras";
+              break;
+            case "tsb7a":
+              label = "Tsb7a";
+              break;
+            case "3shea":
+              label = "3shea";
+              break;
           }
-        } else if (col >= 3) label = headers[col - 3].toString();
-      } else if (selectedValue == "tsme3" && col >= 2) label = headers[col - 2].toString();
+        } else if (col >= 3) {
+          label = headers[col - 3];
+        }
+      } else if (selectedValue == "tsme3" && col >= 2) {
+        label = headers[col - 2];
+      }
     } else {
-      if (col == 0) value = staffList[row - 1].name ?? '';
-      else if (col == 1) value = (staffList[row - 1].score ?? 0).toString();
-      else if (selectedValue == "all") {
+      // Data rows
+      if (col == 0) {
+        value = staffList[row - 1].name!;
+      } else if (col == 1) {
+        value = (staffList[row - 1].score ?? 0).toString();
+      } else if (selectedValue == "all") {
         if (col == 2) value = staffList[row - 1].count2das.toString();
         else if (col == 3) value = staffList[row - 1].countKhoras.toString();
         else if (col == 4) value = staffList[row - 1].countTsb7a.toString();
@@ -361,13 +386,25 @@ class StaffScreenState extends State<StaffScreen> {
       } else if (selectedValue != "tsme3") {
         if (col == 2) {
           switch (selectedValue) {
-            case "2das": value = staffList[row - 1].count2das.toString(); break;
-            case "khoras": value = staffList[row - 1].countKhoras.toString(); break;
-            case "tsb7a": value = staffList[row - 1].countTsb7a.toString(); break;
-            case "3shea": value = staffList[row - 1].count3shea.toString(); break;
+            case "2das":
+              value = staffList[row - 1].count2das.toString();
+              break;
+            case "khoras":
+              value = staffList[row - 1].countKhoras.toString();
+              break;
+            case "tsb7a":
+              value = staffList[row - 1].countTsb7a.toString();
+              break;
+            case "3shea":
+              value = staffList[row - 1].count3shea.toString();
+              break;
           }
-        } else if (col >= 3) value = staffList[row - 1].attended.contains(headers[col - 3]) ? '✓' : '';
-      } else if (selectedValue == "tsme3" && col >= 2) value = staffList[row - 1].attended.contains(headers[col - 2]) ? '✓' : '';
+        } else if (col >= 3) {
+          value = staffList[row - 1].attended.contains(headers[col - 3]) ? '✓' : '';
+        }
+      } else if (selectedValue == "tsme3" && col >= 2) {
+        value = staffList[row - 1].attended.contains(headers[col - 2]) ? '✓' : '';
+      }
     }
 
     return Container(
@@ -382,236 +419,249 @@ class StaffScreenState extends State<StaffScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildStaffView() => BlocConsumer<GetStaffCubit, GetStaffState>(
-    listener: (context, state) {
-      if (state is GetStaffErrorState) _showAlertDialog(state.error);
-      if (state is GetStaffSuccessState) {
-        setState(() {
-          tempList = staffList = state.staffList;
-        });
-      }
-    },
-    builder: (_, state) => state is GetStaffLoadingState
-        ? const Center(child: CircularProgressIndicator())
-        : state is GetStaffSuccessState
-        ? GridView.builder(
-      itemCount: staffList.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: MediaQuery.of(context).size.width ~/ 170),
-      itemBuilder: (_, index) => _buildStaffCard(staffList[index]),
-    )
-        : const SizedBox.shrink(),
-  );
+  }  Widget _buildStaffView() => BlocConsumer<GetStaffCubit, GetStaffState>(
+        listener: (context, state) {
+          if (state is GetStaffErrorState) _showAlertDialog(state.error);
+          if (state is GetStaffSuccessState) {
+            tempList = staffList = state.staffList;
+          }
+        },
+        builder: (_, state) => state is GetStaffLoadingState
+            ? const Center(child: CircularProgressIndicator())
+            : state is GetStaffSuccessState
+                ? GridView.builder(
+                    itemCount: staffList.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width ~/ 170),
+                    itemBuilder: (_, index) =>
+                        _buildStaffCard(staffList[index]),
+                  )
+                : const SizedBox.shrink(),
+      );
 
   Widget _buildStaffCard(User staff) => Column(
-    children: [
-      const SizedBox(height: 20),
-      InkWell(
-        onTap: () => selectedList.isNotEmpty
-            ? _toggleSelection(staff)
-            : _showUserDialog(staff),
-        onLongPress: () => _toggleSelection(staff),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.grey[300],
-              child: (staff.image == null || staff.image!.isEmpty)
-                  ? const Icon(Icons.person, size: 45)
-                  : ClipOval(
-                  child: CustomNetworkImage(
-                      image: staff.image!,
-                      fit: BoxFit.cover,
-                      width: 120,
-                      height: 120)),
+        children: [
+          const SizedBox(height: 20),
+          InkWell(
+            onTap: () => selectedList.isNotEmpty
+                ? _toggleSelection(staff)
+                : _showUserDialog(staff),
+            onLongPress: () => _toggleSelection(staff),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey[300],
+                  child: (staff.image == null||staff.image!.isEmpty)
+                      ? const Icon(Icons.person, size: 45)
+                      : ClipOval(
+                          child: CustomNetworkImage(
+                              image: staff.image!,
+                              fit: BoxFit.cover,
+                              width: 120,
+                              height: 120)),
+                ),
+                if (selectedList.contains(staff))
+                  CircleAvatar(
+                    radius: 57,
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .onPrimaryContainer
+                        .withOpacity(0.7),
+                    child:
+                        const Icon(Icons.check, color: Colors.white, size: 50),
+                  ),
+              ],
             ),
-            if (selectedList.contains(staff))
-              CircleAvatar(
-                radius: 57,
-                backgroundColor: Theme.of(context)
-                    .colorScheme
-                    .onPrimaryContainer
-                    .withOpacity(0.7),
-                child: const Icon(Icons.check, color: Colors.white, size: 50),
-              ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 15),
-      PText(
-          title: '${staff.name ?? "Unknown"} (${staff.score ?? 0})',
-          size: PSize.medium),
-    ],
-  );
+          ),
+          const SizedBox(height: 15),
+          PText(
+              title: '${staff.name} (${staff.score ?? 0})', size: PSize.medium),
+        ],
+      );
 
-  void _toggleSelection(User staff) => setState(() => selectedList.contains(staff)
-      ? selectedList.remove(staff)
-      : selectedList.add(staff));
+  void _toggleSelection(User staff) =>
+      setState(() => selectedList.contains(staff)
+          ? selectedList.remove(staff)
+          : selectedList.add(staff));
 
   void _showUserDialog(User staff) => showDialog(
-    context: context,
-    builder: (_) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        insetPadding: const EdgeInsets.only(top: 15, left: 15, right: 15),
-        title: Row(
-          children: [
-            InkWell(
-              onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back),
+        context: context,
+        builder: (_) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            insetPadding:
+                const EdgeInsets.only(bottom: 50, top: 15, left: 15, right: 15),
+            title: Row(
+              children: [
+                InkWell(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(
+                  width: 30,
+                ),
+                const Text('User Info'),
+              ],
             ),
-            const SizedBox(width: 30),
-            const Text('User Info'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildImagePicker(staff, setState),
-              ..._buildUserFields(staff, setState),
-            ],
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildImagePicker(staff, setState),
+                  ..._buildUserFields(staff, setState),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
-    ),
-  );
+      );
 
   Widget _buildImagePicker(User staff, StateSetter setState) => InkWell(
-    onTap: () async {
-      try {
-        final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-        if (image != null) {
-          final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-          await Supabase.instance.client.storage
-              .from('images')
-              .upload(fileName, File(image.path));
-          staff.image = Supabase.instance.client.storage
-              .from('images')
-              .getPublicUrl(fileName);
-          await _updateField(staff, 'image', staff.image, setState);
-        }
-      } catch (e) {
-        _showAlertDialog('Error uploading image: $e');
-      }
-    },
-    onLongPress: () {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Change Image'),
-            content: _textField(
-                'Image link', staff.image, TextInputType.url, (value) async {
-              await _updateField(staff, 'image', value, setState);
-              Navigator.of(context).pop();
-            }),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-            ],
+        onTap: () async {
+          final image =
+              await ImagePicker().pickImage(source: ImageSource.gallery);
+          if (image != null) {
+            final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+            await Supabase.instance.client.storage
+                .from('images')
+                .upload(fileName, File(image.path));
+            staff.image = Supabase.instance.client.storage
+                .from('images')
+                .getPublicUrl(fileName);
+            _updateField(staff, 'image', staff.image, setState);
+          }
+        },
+        onLongPress: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Change Image'),
+                content: _textField(
+                    'Image link', staff.image, TextInputType.url, (value) {
+                  _updateField(staff, 'image', value, setState);
+                  Navigator.of(context).pop();
+                }),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              );
+            },
           );
         },
-      );
-    },
-    child: Stack(
-      children: [
-        CircleAvatar(
-          radius: 80,
-          backgroundColor: Colors.grey[300],
-          child: (staff.image == null || staff.image!.isEmpty)
-              ? const Icon(Icons.person, size: 55)
-              : ClipOval(
-              child: CustomNetworkImage(
-                  image: staff.image!,
-                  fit: BoxFit.cover,
-                  width: 160,
-                  height: 160)),
-        ),
-        const Positioned(right: 5, bottom: 0, child: Icon(Icons.edit, size: 34)),
-      ],
-    ),
-  );
-
-  List<Widget> _buildUserFields(User staff, StateSetter setState) => [
-    _textField('Name', staff.name, TextInputType.name,
-            (value) => _updateField(staff, 'name', value, setState)),
-    _textField(
-        'Score',
-        staff.score.toString(),
-        TextInputType.number,
-            (value) => _updateField(staff, 'score', int.tryParse(value ?? "0") ?? 0, setState)),
-    _textField("Id", staff.id?.toString() ?? "", TextInputType.number, (value) =>
-      _updateField(staff, 'id', int.tryParse(value ?? "0") ?? 0, setState)
-    ),
-    _textField('Phone', staff.phone, TextInputType.phone,
-            (value) => _updateField(staff, 'phone', value, setState)),
-    _textField('Mom Phone', staff.momPhone, TextInputType.phone,
-            (value) => _updateField(staff, 'momPhone', value, setState)),
-    _textField('Dad Phone', staff.dadPhone, TextInputType.phone,
-            (value) => _updateField(staff, 'dadPhone', value, setState)),
-    _dropdownField(
-        'class',
-        ['5', '6'],
-        staff.level?.toString() ?? '5',
-            (value) => _updateField(staff, 'class', int.parse(value!), setState)),
-    _dropdownField(
-        'Gender',
-        ['بنت', 'ولد'],
-        staff.gender ?? 'ولد',
-            (value) => _updateField(staff, 'gender', value!, setState)),
-    _textField(
-        'Address',
-        staff.address == "null" ? null : staff.address,
-        TextInputType.streetAddress,
-            (value) => _updateField(staff, 'address', value, setState)),
-    FormBuilderDateTimePicker(
-      name: 'Date birth',
-      initialValue: staff.dateBirth,
-      format: DateFormat('MM-dd'),
-      decoration: const InputDecoration(labelText: 'Date birth'),
-      onChanged: (value) => _updateField(staff, 'dateBirth', value, setState),
-    ),
-    _dropdownField(
-        'khadem',
-        [
-          "يوسف جرجس",
-          "بولا برت",
-          "جورج مينا",
-          "اباكير سامي",
-          "مريم فوزي",
-          "ديانا ماجد",
-          "ماريا الفونس",
-          "فيلوباتير إيهاب",
-          "كارين ماجد",
-          "يوسف عصام",
-          "بيتر القمص بيمن",
-          "بيشوي جوزيف"
-        ],
-        staff.khadem ?? '',
-            (value) => _updateField(staff, 'khadem', value, setState)),
-    _textField('Notes', staff.notes, TextInputType.text,
-            (value) => _updateField(staff, 'notes', value, setState)),
-    if (staff.gender == "ولد")
-      Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            const Text("Is shamas?", style: TextStyle(fontSize: 20)),
-            Checkbox(
-                value: staff.isShamas ?? false,
-                onChanged: (val) => _updateField(staff, "isShamas", val, setState)),
+            CircleAvatar(
+              radius: 80,
+              backgroundColor: Colors.grey[300],
+              child: (staff.image == null||staff.image!.isEmpty)
+                  ? const Icon(Icons.person, size: 55)
+                  : ClipOval(
+                      child: CustomNetworkImage(
+                          image: staff.image!,
+                          fit: BoxFit.cover,
+                          width: 160,
+                          height: 160)),
+            ),
+            const Positioned(
+                right: 5, bottom: 0, child: Icon(Icons.edit, size: 34)),
           ],
         ),
-      ),
-  ].map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 7.5), child: e)).toList();
+      );
+
+  List<Widget> _buildUserFields(User staff, StateSetter setState) => [
+        _textField('Name', staff.name, TextInputType.name,
+            (value) => _updateField(staff, 'name', value, setState)),
+        _textField(
+            'Score',
+            staff.score.toString(),
+            TextInputType.number,
+            (value) => _updateField(
+                staff, 'score', int.parse(value ?? "0"), setState)),
+        _textField("Id", staff.id==null?"":staff.id.toString(), TextInputType.number, (value) {
+          _updateField(staff, 'id', int.parse(value ?? "0"));
+        }),
+        _textField('Phone', staff.phone, TextInputType.phone,
+            (value) => _updateField(staff, 'phone', value)),
+        _textField('Mom Phone', staff.momPhone, TextInputType.phone,
+            (value) => _updateField(staff, 'momPhone', value)),
+        _textField('Dad Phone', staff.dadPhone, TextInputType.phone,
+            (value) => _updateField(staff, 'dadPhone', value)),
+        _dropdownField(
+            'class',
+            ['5', '6'],
+            staff.level.toString(),
+            (value) =>
+                _updateField(staff, 'class', int.parse(value!), setState)),
+        _dropdownField(
+            'Gender',
+            ['بنت', 'ولد'],
+            staff.gender, // Fixed here
+            (value) => _updateField(staff, 'gender', value!, setState)),
+        _textField(
+            'Address',
+            staff.address == "null" ? null : staff.address,
+            TextInputType.streetAddress,
+            (value) => _updateField(staff, 'address', value)),
+        FormBuilderDateTimePicker(
+          name: 'Date birth',
+          initialValue: staff.dateBirth,
+          format: DateFormat('MM-dd'),
+          decoration: const InputDecoration(labelText: 'Date birth'),
+          onChanged: (value) => _updateField(staff, 'dateBirth', value),
+        ),
+        _dropdownField(
+            'khadem',
+            [
+              "يوسف جرجس",
+              "بولا برت",
+              "جورج مينا",
+              "اباكير سامي",
+              "مريم فوزي",
+              "ديانا ماجد",
+              "ماريا الفونس",
+              "فيلوباتير إيهاب",
+              "كارين ماجد",
+              "يوسف عصام",
+              "بيتر القمص بيمن",
+              "بيشوي جوزيف"
+            ],
+            staff.khadem,
+            (value) => _updateField(staff, 'khadem', value, setState)),
+        _textField('Notes', staff.notes, TextInputType.text,
+            (value) => _updateField(staff, 'notes', value)),
+        staff.gender == "ولد"
+            ? Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Is shamas?",
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    Checkbox(
+                        value: staff.isShamas,
+                        onChanged: (val) {
+                          _updateField(staff, "isShamas", val, setState);
+                        }),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(),
+      ]
+          .map((e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7.5), child: e))
+          .toList();
 
   Widget _textField(String label, String? initialValue, TextInputType type,
-      Future<void> Function(String?) onSubmit) =>
+          Function(String?) onSubmit) =>
       FormBuilderTextField(
         name: label,
         keyboardType: type,
@@ -624,35 +674,34 @@ class StaffScreenState extends State<StaffScreen> {
       );
 
   Widget _dropdownField(String name, List<String> items, String? initialValue,
-      Function(String?) onChanged) =>
+          Function(String?) onChanged) =>
       FormBuilderDropdown(
         name: name,
-        decoration: InputDecoration(labelText: name[0].toUpperCase() + name.substring(1)),
+        decoration: InputDecoration(
+            labelText: name[0].toUpperCase() + name.substring(1)),
         initialValue: initialValue,
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+        items: items
+            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+            .toList(),
         onChanged: onChanged,
       );
 
-  Future<void> _updateField(User staff, String field, dynamic value, [StateSetter? setState]) async {
-    try {
-      staff.updateField(field, value);
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(staff.uuid)
-          .update({field: value});
-      setState?.call(() {});
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('User updated successfully')));
-    } catch (e) {
-      print('Error updating field $field: $e');
-      _showAlertDialog('Failed to update user: $e');
-    }
+  Future<void> _updateField(User staff, String field, dynamic value,
+      [StateSetter? setState]) async {
+    staff.updateField(field, value);
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(staff.uuid)
+        .update({field: value});
+    setState?.call(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User updated successfully')));
   }
 
   void _sortStaff() {
     setState(() {
       staffList.sort(sortByScore
-          ? (a, b) => (a.name ?? '').compareTo(b.name ?? '')
+          ? (a, b) => a.name!.compareTo(b.name!)
           : (a, b) => (b.score ?? 0).compareTo(a.score ?? 0));
       sortByScore = !sortByScore;
     });
@@ -696,20 +745,25 @@ class StaffScreenState extends State<StaffScreen> {
                     initialValue: null,
                     decoration: const InputDecoration(labelText: 'All7n'),
                     items: al7an
-                        .map((e) => DropdownMenuItem(value: e.toString(), child: Text(e.toString())))
+                        .map((e) => DropdownMenuItem(
+                            value: e.toString(), child: Text(e.toString())))
                         .toList(),
                     onChanged: (value) => setState(() => selectedL7n = value),
                   ),
                 ),
-              if (score != 0)
+              if (score > 0)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: FormBuilderDropdown<String>(
                     name: 'Reason',
                     initialValue: reasons[0],
                     decoration: const InputDecoration(labelText: 'Event Type'),
-                    items: reasons.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                    onChanged: (value) => setState(() => selectedReason = value),
+                    items: reasons
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => selectedReason = value);
+                    },
                   ),
                 ),
               Padding(
@@ -718,8 +772,8 @@ class StaffScreenState extends State<StaffScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [-10, -5, -1, 0, 1, 5, 10]
                       .map((val) => val == 0
-                      ? PText(title: score.toString(), size: PSize.large)
-                      : _scoreButton(setState, val))
+                          ? PText(title: score.toString(), size: PSize.large)
+                          : _scoreButton(setState, val))
                       .toList(),
                 ),
               ),
@@ -731,28 +785,34 @@ class StaffScreenState extends State<StaffScreen> {
                     this.setState(() {});
                     Navigator.pop(context);
                   }
-                  if (state is AddScoreErrorState) _showAlertDialog(state.error);
+                  if (state is AddScoreErrorState)
+                    _showAlertDialog(state.error);
                 },
                 builder: (context, state) => ElevatedButton(
                   onPressed: state is AddScoreLoadingState
-                      ? null
+                      ? null // Disable button while loading
                       : (selectedL7n == null && selectedReason == "tsme3")
-                      ? () => _showAlertDialog("Please select all7n")
-                      : () {
-                    context.read<AddScoreCubit>().addScore(
-                        selectedList,
-                        tempList,
-                        score,
-                        selectedReason!,
-                        selectedL7n,
-                        DateFormat('yyyy-MM-dd').format(dateTime));
-                  },
+                          ? () {
+                              _showAlertDialog("Please select all7n");
+                            }
+                          : () {
+                              context.read<AddScoreCubit>().addScore(
+                                  selectedList,
+                                  tempList,
+                                  score,
+                                  selectedReason!,
+                                  selectedL7n,
+                                  DateFormat('yyyy-MM-dd').format(dateTime));
+                            },
                   child: state is AddScoreLoadingState
                       ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const PText(title: 'Submit', size: PSize.large),
                 ),
               ),
@@ -765,72 +825,73 @@ class StaffScreenState extends State<StaffScreen> {
   }
 
   Widget _buildSelectedUsersList() => ListView.separated(
-    shrinkWrap: true,
-    separatorBuilder: (_, __) => const Divider(),
-    itemCount: selectedList.length,
-    itemBuilder: (_, index) => Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Padding(
-            padding: EdgeInsets.all(25),
-            child: CircleAvatar(radius: 25, child: Icon(Icons.person, size: 20))),
-        Expanded(
-            child: PText(
-                title: selectedList.elementAt(index).name ?? 'Unknown',
-                size: PSize.veryLarge)),
-      ],
-    ),
-  );
+        shrinkWrap: true,
+        separatorBuilder: (_, __) => const Divider(),
+        itemCount: selectedList.length,
+        itemBuilder: (_, index) => Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Padding(
+                padding: EdgeInsets.all(25),
+                child: CircleAvatar(
+                    radius: 25, child: Icon(Icons.person, size: 20))),
+            Expanded(
+                child: PText(
+                    title: selectedList.elementAt(index).name ?? '',
+                    size: PSize.veryLarge)),
+          ],
+        ),
+      );
 
   Widget _scoreButton(StateSetter setState, int value) => SizedBox(
-    width: 50,
-    height: 50,
-    child: InkWell(
-      onTap: () => setState(() => score += value),
-      child: Center(
-          child: PText(
-              title: value > 0 ? '+$value' : '$value', size: PSize.veryLarge)),
-    ),
-  );
+        width: 50,
+        height: 50,
+        child: InkWell(
+          onTap: () => setState(() => score += value),
+          child: Center(
+              child: PText(
+                  title: value > 0 ? '+$value' : '$value',
+                  size: PSize.veryLarge)),
+        ),
+      );
 
   Future<void> _exportToExcel() async {
-    try {
-      if (await Permission.storage.isDenied) await Permission.storage.request();
-      final excel = Excel.createExcel();
-      final sheet = excel['Sheet1'];
+    if (await Permission.storage.isDenied) await Permission.storage.request();
+    final excel = Excel.createExcel();
+    final sheet = excel['Sheet1'];
+    sheet.appendRow([
+      TextCellValue("Name"),
+      TextCellValue("Score"),
+      TextCellValue("Khoras"),
+      TextCellValue("2das"),
+      TextCellValue("Tsb7a"),
+      TextCellValue("3shea"),
+      ...headers.map((h) => TextCellValue(h))
+    ]);
+    for (var user in staffList) {
       sheet.appendRow([
-        TextCellValue("Name"),
-        TextCellValue("Score"),
-        TextCellValue("Khoras"),
-        TextCellValue("2das"),
-        TextCellValue("Tsb7a"),
-        TextCellValue("3shea"),
-        ...headers.map((h) => TextCellValue(h.toString()))
+        TextCellValue(user.name!),
+        TextCellValue(user.score!.toString()),
+        TextCellValue(user.countKhoras!.toString()),
+        TextCellValue(user.count2das!.toString()),
+        TextCellValue(user.countTsb7a!.toString()),
+        TextCellValue(user.count3shea!.toString()),
+        ...headers
+            .map((h) => TextCellValue(user.attended.contains(h) ? "✓" : ""))
       ]);
-      for (var user in staffList) {
-        sheet.appendRow([
-          TextCellValue(user.name ?? ''),
-          TextCellValue((user.score ?? 0).toString()),
-          TextCellValue((user.countKhoras ?? 0).toString()),
-          TextCellValue((user.count2das ?? 0).toString()),
-          TextCellValue((user.countTsb7a ?? 0).toString()),
-          TextCellValue((user.count3shea ?? 0).toString()),
-          ...headers.map((h) => TextCellValue(user.attended.contains(h) ? "✓" : ""))
-        ]);
-      }
-      final fileBytes = excel.encode();
-      if (fileBytes == null) throw Exception('Excel encoding failed');
-      final directory = Platform.isAndroid
-          ? await getExternalStorageDirectory()
-          : await getApplicationDocumentsDirectory();
-      if (directory == null) throw Exception('Could not access storage directory');
+    }
+    final fileBytes = excel.encode();
+    if (fileBytes == null) return;
+    final directory = Platform.isAndroid
+        ? await getExternalStorageDirectory()
+        : await getApplicationDocumentsDirectory();
+    if (directory != null) {
       final filePath =
           '${directory.path}/attendance_sheet_${DateTime.now().toIso8601String()}.xlsx';
       await File(filePath).writeAsBytes(fileBytes, flush: true);
       _showAlertDialog("File saved successfully: $filePath");
-    } catch (e) {
-      print('Error exporting to Excel: $e');
-      _showAlertDialog("Failed to export: $e");
+    } else {
+      _showAlertDialog("Failed to get storage directory");
     }
   }
 
@@ -843,7 +904,9 @@ class StaffScreenState extends State<StaffScreen> {
           content: Text(message),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
               child: const Text('OK'),
             ),
           ],
@@ -853,23 +916,52 @@ class StaffScreenState extends State<StaffScreen> {
   }
 }
 
+// Assuming User class has an updateField method
 extension UserExtension on User {
   void updateField(String field, dynamic value) {
     switch (field) {
-      case 'name': name = value; break;
-      case 'id': id = value; break;
-      case 'score': score = value; break;
-      case 'gender': gender = value; break;
-      case 'phone': phone = value; break;
-      case 'notes': notes = value; break;
-      case 'momPhone': momPhone = value; break;
-      case 'dadPhone': dadPhone = value; break;
-      case 'class': level = value; break;
-      case 'address': address = value; break;
-      case 'dateBirth': dateBirth = value; break;
-      case 'khadem': khadem = value; break;
-      case 'isShamas': isShamas = value; break;
-      case 'image': image = value; break;
+      case 'name':
+        name = value;
+        break;
+      case 'id':
+        id = value;
+        break;
+      case 'score':
+        score = value;
+        break;
+      case 'gender':
+        gender = value;
+        break;
+      case 'phone':
+        phone = value;
+        break;
+      case 'notes':
+        notes = value;
+        break;
+      case 'momPhone':
+        momPhone = value;
+        break;
+      case 'dadPhone':
+        dadPhone = value;
+        break;
+      case 'class':
+        level = value;
+        break;
+      case 'address':
+        address = value;
+        break;
+      case 'dateBirth':
+        dateBirth = value;
+        break;
+      case 'khadem':
+        khadem = value;
+        break;
+      case 'isShamas':
+        isShamas = value;
+        break;
+      case 'image':
+        image = value;
+        break;
     }
   }
 }
