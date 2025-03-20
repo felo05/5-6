@@ -1,84 +1,31 @@
-platform :ios, '16.0'  # Minimum iOS version for mobile_scanner and Firebase
+# Define the platform for your project
+platform :ios, '16.0'  # Increased from 13.0 to meet mobile_scanner requirements
 
-# Disable CocoaPods analytics to speed up builds
-ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+# CocoaPods installation settings
+install! 'cocoapods', :deterministic_uuids => false
 
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :release,
-  'Release' => :release,
-}
-
-# Locate Flutter installation
-def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "#{ESTERgenerated_xcode_build_settings_path} must exist. If you're running pod install manually, ensure Flutter setup is complete."
-  end
-  File.foreach(generated_xcode_build_settings_path) do |line|
-    matches = line.match(/FLUTTER_ROOT=(.*)/)
-    return matches[1].strip if matches
-  end
-  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Run 'flutter pub get' first."
-end
-
-# Load Flutter dependencies
-require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
-
-# Install all Flutter-managed pods
-flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
-# Pre-install hook to force module map generation for all pods
-pre_install do |installer|
-  installer.pod_targets.each do |target|
-    target.specs.each do |spec|
-      # Force all pods to define modules
-      spec.attributes_hash['module'] = true
-    end
-  end
-end
+# Specify the Flutter SDK path
+flutter_root = File.expand_path('/Volumes/My Shared Files/flutter')
+require File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
 
 target 'Runner' do
   use_frameworks!
-  use_modular_headers!  # Enable modular headers globally for all pods
+  use_modular_headers!  # Enable modular headers globally to fix Swift static library issues
 
-  # Explicitly override problematic dependencies with modular headers
-  pod 'SDWebImage', :modular_headers => true
-  pod 'GoogleUtilities', :modular_headers => true
-  pod 'leveldb-library', :modular_headers => true
-  pod 'nanopb', :modular_headers => true
-  pod 'Firebase', :modular_headers => true
-  pod 'FirebaseCore', :modular_headers => true
-  pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'FirebaseFirestore', :modular_headers => true
-  pod 'FirebaseDatabase', :modular_headers => true
-  pod 'FirebaseStorage', :modular_headers => true
-  pod 'FirebaseInAppMessaging', :modular_headers => true
-  pod 'FirebaseInstallations', :modular_headers => true
-  pod 'FirebaseABTesting', :modular_headers => true
-  pod 'FirebaseAppCheckInterop', :modular_headers => true
-  pod 'FirebaseAuthInterop', :modular_headers => true
-  pod 'FirebaseCoreExtension', :modular_headers => true
-  pod 'FirebaseFirestoreInternal', :modular_headers => true
+  # Include all Flutter-managed pods
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
-# Post-install script to enforce static frameworks and module generation
 post_install do |installer|
   installer.pods_project.targets.each do |target|
+    # Apply Flutter-specific build settings
     flutter_additional_ios_build_settings(target)
+
+    # Ensure Swift pods are built with module support
     target.build_configurations.each do |config|
-      # Ensure consistent iOS deployment target
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-      # Enforce module generation for all dependencies
-      config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-      config.build_settings['DEFINES_MODULE'] = 'YES'
-      # Force static framework behavior
       config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-      # Ensure linking works with static frameworks
-      config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
-      config.build_settings['OTHER_LDFLAGS'] << '-ObjC'
-      # Disable header maps to avoid conflicts
-      config.build_settings['USE_HEADERMAP'] = 'NO'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'  # Match platform version
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
     end
   end
 end
