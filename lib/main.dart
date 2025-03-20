@@ -16,39 +16,43 @@ import 'firebase_options.dart';
 Future<void> handleBackgroundMessage(RemoteMessage message) async {}
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Initialize Notification Service
-  final NotificationService notificationService = NotificationService();
-  await notificationService.initialize();
-  await FirebaseMessaging.instance.getToken();
-  FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
-  await Supabase.initialize(
-    url: 'https://wcfcaiqlmlxmkamtwtml.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZmNhaXFsbWx4bWthbXR3dG1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIwMzAwNDMsImV4cCI6MjA1NzYwNjA0M30.5kVBktCPHPdPON4SIsw68zNabzDzZkPbZkDcPIwWEmo',
-  );
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    if (message.notification != null) {
-      String? imageUrl =
-          message.data['imageUrl'] ?? message.notification!.android?.imageUrl;
+    // Initialize Notification Service
+    final NotificationService notificationService = NotificationService();
+    await notificationService.initialize();
+    await FirebaseMessaging.instance.getToken();
+    FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+    await Supabase.initialize(
+      url: 'https://wcfcaiqlmlxmkamtwtml.supabase.co',
+      anonKey:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZmNhaXFsbWx4bWthbXR3dG1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIwMzAwNDMsImV4cCI6MjA1NzYwNjA0M30.5kVBktCPHPdPON4SIsw68zNabzDzZkPbZkDcPIwWEmo',
+    );
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        String? imageUrl =
+            message.data['imageUrl'] ?? message.notification!.android?.imageUrl;
 
-      notificationService.showNotification(
-        title: message.notification!.title,
-        body: message.notification!.body,
-        imageUrl: imageUrl,
-      );
-    }
-  });
+        notificationService.showNotification(
+          title: message.notification!.title,
+          body: message.notification!.body,
+          imageUrl: imageUrl,
+        );
+      }
+    });
 
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {});
-  Permission.notification.request();
-  Permission.camera.request();
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {});
+    Permission.notification.request();
+    Permission.camera.request();
+  }catch(e){
+    print('Error initializing: $e');
+  }
 
   runApp(
     const ProviderScope(
