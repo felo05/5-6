@@ -47,5 +47,20 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Added Permissions -->
+		<!-- Camera (for mobile_scanner or camera features) -->
+		<key>NSCameraUsageDescription</key>
+		<string>This app needs camera access to scan barcodes or take photos.</string>
+		<!-- Photo Library (for image picking) -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>This app needs access to your photo library to select or save images.</string>
+		<!-- Push Notifications (Firebase Cloud Messaging) -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		<key>FirebaseAppDelegateProxyEnabled</key>
+		<false/> <!-- Manual Firebase setup for notifications -->
 	</dict>
 </plist>
